@@ -3,15 +3,17 @@ import { Dashboard } from './components/Dashboard';
 import { UploadPanel } from './components/UploadPanel';
 import { DataTable } from './components/DataTable';
 import { GroupManager } from './components/GroupManager';
+import { OtherSettings } from './components/OtherSettings';
 import './App.css';
 
-type Tab = 'dashboard' | 'upload' | 'data' | 'groups';
+type Tab = 'dashboard' | 'upload' | 'data' | 'groups' | 'other';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'dashboard', label: '대시보드' },
   { key: 'upload', label: '데이터 업로드' },
   { key: 'data', label: '데이터 관리' },
   { key: 'groups', label: '그룹 설정' },
+  { key: 'other', label: '기타 설정' },
 ];
 
 function App() {
@@ -38,6 +40,7 @@ function App() {
         {tab === 'upload' && <UploadPanel />}
         {tab === 'data' && <DataTable />}
         {tab === 'groups' && <GroupManager />}
+        {tab === 'other' && <OtherSettings />}
       </main>
     </div>
   );

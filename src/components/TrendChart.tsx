@@ -13,7 +13,6 @@ export function TrendChart({ records }: { records: SaleRecord[] }) {
 
   return (
     <div className="chart-panel">
-      <h3>일별 매출 추이</h3>
       <ResponsiveContainer width="100%" height={280}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" />

@@ -1,15 +1,23 @@
-import type { DashboardFilters } from '../lib/filters';
-import { MultiSelectFilter } from './MultiSelectFilter';
+import { CHANNEL_TYPE_OPTIONS, type DashboardFilters } from '../lib/filters';
+import { MultiSelectFilter, type SelectOption } from './MultiSelectFilter';
 
 interface Props {
   filters: DashboardFilters;
   onChange: (next: DashboardFilters) => void;
-  channelOptions: string[];
-  productOptions: string[];
-  categoryOptions: string[];
+  channelOptions: SelectOption[];
+  productOptions: SelectOption[];
+  categoryOptions: SelectOption[];
+  groupOptions: SelectOption[];
 }
 
-export function FilterBar({ filters, onChange, channelOptions, productOptions, categoryOptions }: Props) {
+export function FilterBar({
+  filters,
+  onChange,
+  channelOptions,
+  productOptions,
+  categoryOptions,
+  groupOptions,
+}: Props) {
   const set = <K extends keyof DashboardFilters>(key: K, value: DashboardFilters[K]) =>
     onChange({ ...filters, [key]: value });
 
@@ -27,6 +35,12 @@ export function FilterBar({ filters, onChange, channelOptions, productOptions, c
       </div>
 
       <MultiSelectFilter
+        label="채널유형"
+        options={CHANNEL_TYPE_OPTIONS}
+        selected={filters.channelTypeSelections}
+        onChange={(v) => set('channelTypeSelections', v)}
+      />
+      <MultiSelectFilter
         label="채널"
         options={channelOptions}
         selected={filters.channelSelections}
@@ -43,6 +57,12 @@ export function FilterBar({ filters, onChange, channelOptions, productOptions, c
         options={productOptions}
         selected={filters.productSelections}
         onChange={(v) => set('productSelections', v)}
+      />
+      <MultiSelectFilter
+        label="그룹"
+        options={groupOptions}
+        selected={filters.groupSelections}
+        onChange={(v) => set('groupSelections', v)}
       />
 
       <div className="filter-type">

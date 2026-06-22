@@ -34,3 +34,29 @@ export interface ChannelGroup {
   channelNames: string[]; // 관리항목명 멤버
   createdAt: number;
 }
+
+export type DisplayNameDimension = 'channel' | 'category' | 'brand';
+
+export interface DisplayNameOverride {
+  id: string; // `${dimension}::${rawValue}`
+  dimension: DisplayNameDimension;
+  rawValue: string;
+  displayName: string;
+}
+
+export const CHANNEL_TYPES = ['유통사', '도매', '온라인', '매장', '기타'] as const;
+export type ChannelType = (typeof CHANNEL_TYPES)[number];
+
+export interface ChannelTypeAssignment {
+  id: string; // = channelName
+  channelName: string;
+  channelType: ChannelType;
+}
+
+export interface ItemCost {
+  id: string; // = itemCode
+  itemCode: string;
+  itemName: string;
+  unitCost: number; // 매입단가(원가)
+  uploadedAt: number;
+}

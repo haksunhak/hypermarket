@@ -1,31 +1,70 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../db';
-import { applyFilters, buildChannelOptions, buildProductOptions, type DashboardFilters } from '../lib/filters';
+import {
+  applyFilters,
+  buildCategoryOptions,
+  buildChannelOptions,
+  buildGroupOptions,
+  buildNonDatePredicate,
+  buildProductOptions,
+  resolveReportScope,
+  type DashboardFilters,
+} from '../lib/filters';
+import { buildChannelTypeMap, buildDisplayMap, resolveChannelLabel, resolveDisplay } from '../lib/displayNames';
+import { buildCostMap } from '../lib/itemCost';
 import { FilterBar } from './FilterBar';
 import { KpiCards } from './KpiCards';
 import { TrendChart } from './TrendChart';
 import { BreakdownChart } from './BreakdownChart';
-
-function todayMinus(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
-}
+import { ItemTrendCharts } from './ItemTrendCharts';
+import { ItemDailyDetail } from './ItemDailyDetail';
+import { ComparisonCards } from './ComparisonCards';
+import { ChannelTypeReportSection } from './ChannelTypeReportSection';
+import { DraggableWidgets, type WidgetDef } from './DraggableWidgets';
+import { CollapsibleSection } from './CollapsibleSection';
 
 export function Dashboard() {
   const records = useLiveQuery(() => db.records.toArray()) ?? [];
   const channelGroups = useLiveQuery(() => db.channelGroups.toArray()) ?? [];
   const productGroups = useLiveQuery(() => db.productGroups.toArray()) ?? [];
+  const displayOverrides = useLiveQuery(() => db.displayNames.toArray()) ?? [];
+  const channelTypeAssignments = useLiveQuery(() => db.channelTypes.toArray()) ?? [];
+  const itemCosts = useLiveQuery(() => db.itemCosts.toArray()) ?? [];
 
   const [filters, setFilters] = useState<DashboardFilters>({
-    dateFrom: todayMinus(30),
-    dateTo: todayMinus(0),
+    dateFrom: '',
+    dateTo: '',
     channelSelections: [],
     productSelections: [],
     categorySelections: [],
+    groupSelections: [],
+    channelTypeSelections: [],
     recordType: 'sale',
   });
+
+  // 데이터의 실제 날짜 범위를 기본 기간으로 사용 (사용자가 직접 기간을 바꾸면 더는 자동 조정하지 않음)
+  const dateFilterTouched = useRef(false);
+  const dataDateRange = useMemo(() => {
+    if (records.length === 0) return null;
+    let min = records[0].date;
+    let max = records[0].date;
+    for (const r of records) {
+      if (r.date < min) min = r.date;
+      if (r.date > max) max = r.date;
+    }
+    return { min, max };
+  }, [records]);
+
+  useEffect(() => {
+    if (dateFilterTouched.current || !dataDateRange) return;
+    setFilters((f) => ({ ...f, dateFrom: dataDateRange.min, dateTo: dataDateRange.max }));
+  }, [dataDateRange]);
+
+  const handleFiltersChange = (next: DashboardFilters) => {
+    dateFilterTouched.current = true;
+    setFilters(next);
+  };
 
   const channelNames = useMemo(
     () => Array.from(new Set(records.map((r) => r.channelName).filter(Boolean))).sort(),
@@ -40,18 +79,43 @@ export function Dashboard() {
     [records]
   );
 
+  const channelDisplayMap = useMemo(() => buildDisplayMap(displayOverrides, 'channel'), [displayOverrides]);
+  const categoryDisplayMap = useMemo(() => buildDisplayMap(displayOverrides, 'category'), [displayOverrides]);
+  const brandDisplayMap = useMemo(() => buildDisplayMap(displayOverrides, 'brand'), [displayOverrides]);
+  const channelTypeMap = useMemo(() => buildChannelTypeMap(channelTypeAssignments), [channelTypeAssignments]);
+  const costMap = useMemo(() => buildCostMap(itemCosts), [itemCosts]);
+
   const channelOptions = useMemo(
-    () => buildChannelOptions(channelNames, channelGroups),
-    [channelNames, channelGroups]
+    () => buildChannelOptions(channelNames, channelDisplayMap, channelTypeMap),
+    [channelNames, channelDisplayMap, channelTypeMap]
   );
   const productOptions = useMemo(
-    () => buildProductOptions(group3Names, productGroups),
-    [group3Names, productGroups]
+    () => buildProductOptions(group3Names, brandDisplayMap),
+    [group3Names, brandDisplayMap]
+  );
+  const categoryOptions = useMemo(
+    () => buildCategoryOptions(group2Names, categoryDisplayMap),
+    [group2Names, categoryDisplayMap]
+  );
+  const groupOptions = useMemo(
+    () => buildGroupOptions(channelGroups, productGroups),
+    [channelGroups, productGroups]
   );
 
   const filtered = useMemo(
-    () => applyFilters(records, filters, channelGroups, productGroups),
-    [records, filters, channelGroups, productGroups]
+    () => applyFilters(records, filters, channelGroups, productGroups, channelTypeMap),
+    [records, filters, channelGroups, productGroups, channelTypeMap]
+  );
+
+  // 기간(날짜) 필터를 제외한 나머지 조건만 적용된 데이터 — 비교/일자별 상세 위젯에서
+  // 현재 선택된 채널·카테고리·품목·그룹 범위를 유지한 채 다른 날짜를 조회할 때 사용
+  const nonDatePredicate = useMemo(
+    () => buildNonDatePredicate(filters, channelGroups, productGroups, channelTypeMap),
+    [filters, channelGroups, productGroups, channelTypeMap]
+  );
+  const filteredAllDates = useMemo(
+    () => records.filter(nonDatePredicate),
+    [records, nonDatePredicate]
   );
 
   if (records.length === 0) {
@@ -63,35 +127,99 @@ export function Dashboard() {
     );
   }
 
+  const reportScope = resolveReportScope(filters, productGroups, brandDisplayMap);
+
+  const widgets: WidgetDef[] = [
+    { key: 'kpi', node: <KpiCards records={filtered} /> },
+    {
+      key: 'comparison',
+      node: <ComparisonCards records={filteredAllDates} baseDate={filters.dateTo} />,
+    },
+  ];
+
+  // 품목/브랜드 또는 그룹을 선택했을 때만, 비교 카드 바로 아래에 판매현황·판매누계와
+  // 일자별 상세를 노출한다. 선택 전에는 두 위젯 모두 표시하지 않는다.
+  if (reportScope) {
+    widgets.push(
+      {
+        key: 'channel-type-report',
+        node: (
+          <ChannelTypeReportSection
+            records={records}
+            dateFrom={filters.dateFrom}
+            dateTo={filters.dateTo}
+            scope={reportScope}
+            channelTypeMap={channelTypeMap}
+            costMap={costMap}
+          />
+        ),
+      },
+      {
+        key: 'item-daily-detail',
+        node: <ItemDailyDetail records={filteredAllDates.filter(reportScope.matches)} defaultDate={filters.dateTo} />,
+      }
+    );
+  }
+
+  widgets.push(
+    {
+      key: 'channel-brand-breakdown',
+      node: (
+        <div className="chart-row">
+          <BreakdownChart
+            title="채널별 매출 Top 10"
+            records={filtered}
+            groupBy={(r) => resolveChannelLabel(channelDisplayMap, channelTypeMap, r.channelName)}
+          />
+          <BreakdownChart
+            title="브랜드(품목그룹3)별 매출 Top 10"
+            records={filtered}
+            groupBy={(r) => resolveDisplay(brandDisplayMap, r.group3)}
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'category-breakdown',
+      node: (
+        <BreakdownChart
+          title="카테고리(품목그룹2)별 매출"
+          records={filtered}
+          groupBy={(r) => resolveDisplay(categoryDisplayMap, r.group2)}
+          topN={13}
+        />
+      ),
+    },
+    {
+      key: 'trend',
+      node: (
+        <CollapsibleSection title="일별 매출 추이">
+          <TrendChart records={filtered} />
+        </CollapsibleSection>
+      ),
+    },
+    {
+      key: 'item-trend',
+      node: (
+        <CollapsibleSection title="품목별 추이">
+          <ItemTrendCharts records={filtered} />
+        </CollapsibleSection>
+      ),
+    }
+  );
+
   return (
-    <div className="dashboard">
+    <div className="dashboard-wrap">
       <FilterBar
         filters={filters}
-        onChange={setFilters}
+        onChange={handleFiltersChange}
         channelOptions={channelOptions}
         productOptions={productOptions}
-        categoryOptions={group2Names}
+        categoryOptions={categoryOptions}
+        groupOptions={groupOptions}
       />
-      <KpiCards records={filtered} />
-      <TrendChart records={filtered} />
-      <div className="chart-row">
-        <BreakdownChart
-          title="채널별 매출 Top 10"
-          records={filtered}
-          groupBy={(r) => r.channelName}
-        />
-        <BreakdownChart
-          title="브랜드(품목그룹3)별 매출 Top 10"
-          records={filtered}
-          groupBy={(r) => r.group3}
-        />
-      </div>
-      <BreakdownChart
-        title="카테고리(품목그룹2)별 매출"
-        records={filtered}
-        groupBy={(r) => r.group2}
-        topN={13}
-      />
+      <p className="hint dashboard-drag-hint">위젯 오른쪽 위 ⠿⠿ 표시를 마우스로 드래그하면 순서를 바꿀 수 있습니다.</p>
+      <DraggableWidgets widgets={widgets} />
     </div>
   );
 }
