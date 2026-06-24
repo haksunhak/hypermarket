@@ -25,9 +25,11 @@ interface Props {
   title: string;
   report: ChannelTypeReport;
   onDownload?: () => void;
+  onGroupClick?: (group2: string) => void;
+  selectedGroup?: string | null;
 }
 
-export function ChannelTypeReportTable({ title, report, onDownload }: Props) {
+export function ChannelTypeReportTable({ title, report, onDownload, onGroupClick, selectedGroup }: Props) {
   const { columns, sections, grand, grandTotal } = report;
 
   return (
@@ -72,8 +74,22 @@ export function ChannelTypeReportTable({ title, report, onDownload }: Props) {
               {section.items.map((item, idx) => (
                 <tr key={item.itemCode}>
                   {idx === 0 && (
-                    <td rowSpan={section.items.length + 1} className="ctt-section">
+                    <td
+                      rowSpan={section.items.length + 1}
+                      className={[
+                        'ctt-section',
+                        onGroupClick ? 'ctt-section-clickable' : '',
+                        selectedGroup === section.group2 ? 'ctt-section-selected' : '',
+                      ].filter(Boolean).join(' ')}
+                      onClick={onGroupClick ? () => onGroupClick(section.group2) : undefined}
+                      title={onGroupClick ? '클릭하면 채널별 상세를 확인할 수 있습니다' : undefined}
+                    >
                       {section.group2}
+                      {onGroupClick && (
+                        <span className="ctt-drill-arrow">
+                          {selectedGroup === section.group2 ? '▲' : '▼'}
+                        </span>
+                      )}
                     </td>
                   )}
                   <td className="ctt-itemname">{item.itemName}</td>

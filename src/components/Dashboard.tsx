@@ -23,6 +23,7 @@ import { ItemTrendCharts } from './ItemTrendCharts';
 import { ItemDailyDetail } from './ItemDailyDetail';
 import { ComparisonCards } from './ComparisonCards';
 import { ChannelTypeReportSection } from './ChannelTypeReportSection';
+import { InsightsPanel } from './InsightsPanel';
 import { DraggableWidgets, type WidgetDef } from './DraggableWidgets';
 import { CollapsibleSection } from './CollapsibleSection';
 
@@ -176,6 +177,7 @@ export function Dashboard() {
             dateTo={filters.dateTo}
             scope={reportScope}
             channelTypeMap={channelTypeMap}
+            channelDisplayMap={channelDisplayMap}
             costMap={costMap}
             channelTypeDisplayMap={channelTypeDisplayMap}
           />
@@ -236,6 +238,16 @@ export function Dashboard() {
         <CollapsibleSection title="품목별 추이">
           <ItemTrendCharts records={filtered} />
         </CollapsibleSection>
+      ),
+    },
+    {
+      key: 'insights',
+      node: (
+        <InsightsPanel
+          records={records}
+          channelTypeMap={channelTypeMap}
+          channelTypeDisplayMap={channelTypeDisplayMap}
+        />
       ),
     }
   );
