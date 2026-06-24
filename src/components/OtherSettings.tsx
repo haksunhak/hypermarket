@@ -113,11 +113,11 @@ function RenameSection({
                 value={valueFor(raw)}
                 onChange={(e) => setDrafts((d) => ({ ...d, [raw]: e.target.value }))}
               />
-              <button
-                type="button"
-                className={dirty ? 'btn-save-needed' : undefined}
-                onClick={() => save(raw)}
-              >{dirty ? '저장 필요' : '저장'}</button>
+              {dirty && (
+                <button type="button" className="btn-save-needed" onClick={() => save(raw)}>
+                  저장 필요
+                </button>
+              )}
               {overridden && (
                 <button type="button" onClick={() => reset(raw)}>원래대로</button>
               )}
