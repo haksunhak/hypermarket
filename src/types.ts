@@ -35,7 +35,7 @@ export interface ChannelGroup {
   createdAt: number;
 }
 
-export type DisplayNameDimension = 'channel' | 'category' | 'brand';
+export type DisplayNameDimension = 'channel' | 'category' | 'brand' | 'channelType';
 
 export interface DisplayNameOverride {
   id: string; // `${dimension}::${rawValue}`

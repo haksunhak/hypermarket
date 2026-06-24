@@ -61,6 +61,7 @@ export function DataTable() {
   };
 
   return (
+    <div className="fullwidth-wrap">
     <div className="panel">
       <h2>업로드 데이터 관리</h2>
       <p className="hint">잘못 입력된 데이터를 검색하여 직접 수정하거나 삭제할 수 있습니다.</p>
@@ -189,6 +190,7 @@ export function DataTable() {
         <span>{page + 1} / {pageCount} ({filtered.length}건)</span>
         <button type="button" disabled={page >= pageCount - 1} onClick={() => setPage((p) => p + 1)}>다음</button>
       </div>
+    </div>
     </div>
   );
 }

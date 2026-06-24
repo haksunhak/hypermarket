@@ -31,14 +31,21 @@ export function ComparisonCards({ records, baseDate }: Props) {
 
   return (
     <div className="panel">
-      <h3>전일·전월·전년 비교 (기준일: {baseDate})</h3>
+      <h3>전일·전주·전월·전년 비교 (기준일: {baseDate})</h3>
+      <p className="hint">
+        전일·전주 비교는 월요일이 끼면 직전 토·일 매출을 함께 합산해 비교합니다 (매장 채널 등
+        주말 매출이 누락되지 않도록).
+      </p>
       <div className="comparison-grid">
         {comparisons.map((c) => (
-          <div className="comparison-card" key={c.label}>
+          <div
+            className={`comparison-card${c.changePct !== null ? (c.changePct > 0 ? ' is-up' : c.changePct < 0 ? ' is-down' : '') : ''}`}
+            key={c.label}
+          >
             <div className="comparison-label">{c.label}</div>
             <div className="comparison-value">{c.currentAmount.toLocaleString('ko-KR')}원</div>
             <div className="comparison-sub">
-              {c.compareDate}: {c.compareAmount.toLocaleString('ko-KR')}원
+              {c.currentLabel} vs {c.compareLabel}: {c.compareAmount.toLocaleString('ko-KR')}원
             </div>
             <ChangeBadge pct={c.changePct} />
           </div>

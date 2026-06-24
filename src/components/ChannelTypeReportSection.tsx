@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { SaleRecord } from '../types';
 import { buildChannelTypeReport } from '../lib/channelTypeReport';
 import type { ReportScope } from '../lib/filters';
+import { exportChannelTypeReportToExcel } from '../lib/exportExcel';
 import { ChannelTypeReportTable } from './ChannelTypeReportTable';
 
 const WEEKDAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
@@ -19,9 +20,18 @@ interface Props {
   scope: ReportScope;
   channelTypeMap: Map<string, string>;
   costMap: Map<string, number>;
+  channelTypeDisplayMap: Map<string, string>;
 }
 
-export function ChannelTypeReportSection({ records, dateFrom, dateTo, scope, channelTypeMap, costMap }: Props) {
+export function ChannelTypeReportSection({
+  records,
+  dateFrom,
+  dateTo,
+  scope,
+  channelTypeMap,
+  costMap,
+  channelTypeDisplayMap,
+}: Props) {
   const scopedRecords = useMemo(
     () =>
       records.filter(
@@ -30,19 +40,45 @@ export function ChannelTypeReportSection({ records, dateFrom, dateTo, scope, cha
     [records, scope, dateFrom, dateTo]
   );
 
+  // 종료일에 정확히 데이터가 없을 수 있으므로(예: 넓은 기간 조회 중 마지막 날짜에는
+  // 선택한 그룹의 판매가 없는 경우), 선택 범위 내에서 실제 데이터가 있는 가장 최근
+  // 날짜를 스냅샷 기준일로 사용한다. 그래야 "일별 판매현황" 표가 늘 비어 보이지 않는다.
+  const snapshotDate = useMemo(() => {
+    if (scopedRecords.length === 0) return dateTo;
+    if (dateTo && scopedRecords.some((r) => r.date === dateTo)) return dateTo;
+    let max = scopedRecords[0].date;
+    for (const r of scopedRecords) {
+      if (r.date > max) max = r.date;
+    }
+    return max;
+  }, [scopedRecords, dateTo]);
+
   const dailyRecords = useMemo(
-    () => (dateTo ? scopedRecords.filter((r) => r.date === dateTo) : []),
-    [scopedRecords, dateTo]
+    () => (snapshotDate ? scopedRecords.filter((r) => r.date === snapshotDate) : []),
+    [scopedRecords, snapshotDate]
   );
 
   const dailyReport = useMemo(
-    () => buildChannelTypeReport(dailyRecords, channelTypeMap, costMap),
-    [dailyRecords, channelTypeMap, costMap]
+    () => buildChannelTypeReport(dailyRecords, channelTypeMap, costMap, channelTypeDisplayMap),
+    [dailyRecords, channelTypeMap, costMap, channelTypeDisplayMap]
   );
   const cumulativeReport = useMemo(
-    () => buildChannelTypeReport(scopedRecords, channelTypeMap, costMap),
-    [scopedRecords, channelTypeMap, costMap]
+    () => buildChannelTypeReport(scopedRecords, channelTypeMap, costMap, channelTypeDisplayMap),
+    [scopedRecords, channelTypeMap, costMap, channelTypeDisplayMap]
   );
+
+  const dailyTitle = snapshotDate
+    ? `${formatDateWithWeekday(snapshotDate)} ${scope.label} 판매현황`
+    : `${scope.label} 판매현황`;
+  const cumulativeTitle = `판매 누계 (${dateFrom}~${dateTo}) ${scope.label}`;
+
+  const handleDownloadDaily = useCallback(() => {
+    exportChannelTypeReportToExcel(dailyReport, dailyTitle);
+  }, [dailyReport, dailyTitle]);
+
+  const handleDownloadCumulative = useCallback(() => {
+    exportChannelTypeReportToExcel(cumulativeReport, cumulativeTitle);
+  }, [cumulativeReport, cumulativeTitle]);
 
   if (scopedRecords.length === 0) {
     return (
@@ -55,13 +91,18 @@ export function ChannelTypeReportSection({ records, dateFrom, dateTo, scope, cha
 
   return (
     <div className="panel channel-type-report-panel">
-      {dateTo && (
+      {snapshotDate && (
         <ChannelTypeReportTable
-          title={`${formatDateWithWeekday(dateTo)} ${scope.label} 판매현황`}
+          title={dailyTitle}
           report={dailyReport}
+          onDownload={handleDownloadDaily}
         />
       )}
-      <ChannelTypeReportTable title={`판매 누계 (${dateFrom}~${dateTo}) ${scope.label}`} report={cumulativeReport} />
+      <ChannelTypeReportTable
+        title={cumulativeTitle}
+        report={cumulativeReport}
+        onDownload={handleDownloadCumulative}
+      />
     </div>
   );
 }

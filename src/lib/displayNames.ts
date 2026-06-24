@@ -28,9 +28,12 @@ export function buildChannelTypeMap(assignments: ChannelTypeAssignment[]): Map<s
 export function resolveChannelLabel(
   displayMap: Map<string, string>,
   typeMap: Map<string, string>,
-  rawChannelName: string
+  rawChannelName: string,
+  channelTypeDisplayMap?: Map<string, string>
 ): string {
   const name = resolveDisplay(displayMap, rawChannelName);
   const type = typeMap.get(rawChannelName);
-  return type ? `[${type}] ${name}` : name;
+  if (!type) return name;
+  const typeLabel = channelTypeDisplayMap ? resolveDisplay(channelTypeDisplayMap, type) : type;
+  return `[${typeLabel}] ${name}`;
 }

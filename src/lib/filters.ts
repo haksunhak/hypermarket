@@ -4,6 +4,7 @@ import type { SelectOption } from '../components/MultiSelectFilter';
 import { resolveChannelLabel, resolveDisplay } from './displayNames';
 
 export interface DashboardFilters {
+  dateMode: 'range' | 'single'; // 기간별 / 특정일
   dateFrom: string;
   dateTo: string;
   channelSelections: string[]; // raw channelName 값
@@ -14,14 +15,23 @@ export interface DashboardFilters {
   recordType: 'sale' | 'gift' | 'all';
 }
 
-export const CHANNEL_TYPE_OPTIONS: SelectOption[] = CHANNEL_TYPES.map((t) => ({ value: t, label: t }));
+export function buildChannelTypeOptions(channelTypeDisplayMap: Map<string, string>): SelectOption[] {
+  return CHANNEL_TYPES.map((t, i) => ({
+    value: t, // 내부 식별값은 항상 원본 유지 (필터링/저장 로직이 이 값에 의존)
+    label: `${i + 1}. ${resolveDisplay(channelTypeDisplayMap, t)}`,
+  }));
+}
 
 export function buildChannelOptions(
   channelNames: string[],
   displayMap: Map<string, string>,
-  channelTypeMap: Map<string, string>
+  channelTypeMap: Map<string, string>,
+  channelTypeDisplayMap: Map<string, string>
 ): SelectOption[] {
-  return channelNames.map((n) => ({ value: n, label: resolveChannelLabel(displayMap, channelTypeMap, n) }));
+  return channelNames.map((n) => ({
+    value: n,
+    label: resolveChannelLabel(displayMap, channelTypeMap, n, channelTypeDisplayMap),
+  }));
 }
 
 export function buildProductOptions(group3Names: string[], displayMap: Map<string, string>): SelectOption[] {

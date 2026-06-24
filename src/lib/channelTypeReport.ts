@@ -6,7 +6,7 @@ const UNASSIGNED = '미지정';
 export interface CellMetrics {
   qty: number;
   saleAmount: number;
-  cogs: number; // 매출원가(사은품 포함)
+  cogs: number; // 매출원가(전달된 레코드 기준 — 구분 필터에 따라 사은품 포함 여부가 달라짐)
 }
 
 export interface ItemRow {
@@ -45,21 +45,24 @@ function addInto(target: CellMetrics, record: SaleRecord, unitCost: number) {
 export function buildChannelTypeReport(
   records: SaleRecord[],
   channelTypeMap: Map<string, string>,
-  costMap: Map<string, number>
+  costMap: Map<string, number>,
+  channelTypeDisplayMap: Map<string, string> = new Map()
 ): ChannelTypeReport {
+  const resolveType = (raw: string) => channelTypeDisplayMap.get(raw) || raw;
+
   const presentColumns = new Set<string>();
   for (const r of records) {
-    presentColumns.add(channelTypeMap.get(r.channelName) ?? UNASSIGNED);
+    presentColumns.add(resolveType(channelTypeMap.get(r.channelName) ?? UNASSIGNED));
   }
   const columns = [
-    ...CHANNEL_TYPES.filter((t) => presentColumns.has(t)),
+    ...CHANNEL_TYPES.map(resolveType).filter((t) => presentColumns.has(t)),
     ...(presentColumns.has(UNASSIGNED) ? [UNASSIGNED] : []),
   ];
 
   const sectionMap = new Map<string, Map<string, ItemRow>>();
 
   for (const r of records) {
-    const col = channelTypeMap.get(r.channelName) ?? UNASSIGNED;
+    const col = resolveType(channelTypeMap.get(r.channelName) ?? UNASSIGNED);
     const group2 = r.group2 || '(미분류)';
     if (!sectionMap.has(group2)) sectionMap.set(group2, new Map());
     const itemMap = sectionMap.get(group2)!;

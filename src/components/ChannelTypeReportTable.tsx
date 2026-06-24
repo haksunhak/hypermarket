@@ -24,14 +24,22 @@ function CellGroup({ cell }: { cell: CellMetrics }) {
 interface Props {
   title: string;
   report: ChannelTypeReport;
+  onDownload?: () => void;
 }
 
-export function ChannelTypeReportTable({ title, report }: Props) {
+export function ChannelTypeReportTable({ title, report, onDownload }: Props) {
   const { columns, sections, grand, grandTotal } = report;
 
   return (
     <div className="channel-type-report">
-      <div className="channel-type-report-title">{title}</div>
+      <div className="channel-type-report-title">
+        {title}
+        {onDownload && (
+          <button type="button" className="ctr-download-btn" onClick={onDownload}>
+            ⬇ 엑셀 다운로드
+          </button>
+        )}
+      </div>
       <div className="channel-type-table-scroll">
       <table className="channel-type-table">
         <thead>
@@ -48,13 +56,13 @@ export function ChannelTypeReportTable({ title, report }: Props) {
               <Fragment key={c}>
                 <th>수량</th>
                 <th>판매금액</th>
-                <th>매출원가(사은품포함)</th>
+                <th>매출원가</th>
                 <th>판매이익률</th>
               </Fragment>
             ))}
             <th>수량</th>
             <th>판매금액</th>
-            <th>매출원가(사은품포함)</th>
+            <th>매출원가</th>
             <th>판매이익률</th>
           </tr>
         </thead>

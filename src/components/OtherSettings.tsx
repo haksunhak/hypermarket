@@ -10,7 +10,15 @@ const SECTIONS: { dimension: DisplayNameDimension; title: string; field: keyof S
   { dimension: 'brand', title: '품목/브랜드', field: 'group3' },
 ];
 
-function ChannelTypeSelect({ raw, currentType }: { raw: string; currentType: string | undefined }) {
+function ChannelTypeSelect({
+  raw,
+  currentType,
+  channelTypeDisplayMap,
+}: {
+  raw: string;
+  currentType: string | undefined;
+  channelTypeDisplayMap: Map<string, string>;
+}) {
   const handleChange = async (value: string) => {
     if (!value) {
       await db.channelTypes.delete(raw);
@@ -27,7 +35,7 @@ function ChannelTypeSelect({ raw, currentType }: { raw: string; currentType: str
     >
       <option value="">0. 구분 없음</option>
       {CHANNEL_TYPES.map((t, i) => (
-        <option key={t} value={t}>{`${i + 1}. ${t}`}</option>
+        <option key={t} value={t}>{`${i + 1}. ${resolveDisplay(channelTypeDisplayMap, t)}`}</option>
       ))}
     </select>
   );
@@ -39,16 +47,23 @@ function RenameSection({
   rawValues,
   displayMap,
   channelTypeMap,
+  channelTypeDisplayMap,
+  numberPrefix,
 }: {
   dimension: DisplayNameDimension;
   title: string;
   rawValues: string[];
   displayMap: Map<string, string>;
   channelTypeMap?: Map<string, string>;
+  channelTypeDisplayMap?: Map<string, string>;
+  numberPrefix?: boolean;
 }) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
   const valueFor = (raw: string) => drafts[raw] ?? resolveDisplay(displayMap, raw);
+
+  const isDirty = (raw: string) =>
+    drafts[raw] !== undefined && drafts[raw] !== resolveDisplay(displayMap, raw);
 
   const save = async (raw: string) => {
     const next = (drafts[raw] ?? resolveDisplay(displayMap, raw)).trim();
@@ -77,18 +92,31 @@ function RenameSection({
       <h3>{title}</h3>
       {rawValues.length === 0 && <p className="hint">업로드된 데이터에서 값을 찾을 수 없습니다.</p>}
       <ul className="rename-list">
-        {rawValues.map((raw) => {
+        {rawValues.map((raw, idx) => {
           const overridden = displayMap.has(raw);
+          const dirty = isDirty(raw);
           return (
             <li key={raw} className="rename-row">
-              {channelTypeMap && <ChannelTypeSelect raw={raw} currentType={channelTypeMap.get(raw)} />}
-              <span className="rename-raw" title={raw}>{raw}</span>
+              {channelTypeMap && (
+                <ChannelTypeSelect
+                  raw={raw}
+                  currentType={channelTypeMap.get(raw)}
+                  channelTypeDisplayMap={channelTypeDisplayMap ?? new Map()}
+                />
+              )}
+              <span className="rename-raw" title={raw}>
+                {numberPrefix ? `${idx + 1}. ` : ''}{raw}
+              </span>
               <span className="rename-arrow">→</span>
               <input
                 value={valueFor(raw)}
                 onChange={(e) => setDrafts((d) => ({ ...d, [raw]: e.target.value }))}
               />
-              <button type="button" onClick={() => save(raw)}>저장</button>
+              <button
+                type="button"
+                className={dirty ? 'btn-save-dirty' : undefined}
+                onClick={() => save(raw)}
+              >저장</button>
               {overridden && (
                 <button type="button" onClick={() => reset(raw)}>원래대로</button>
               )}
@@ -177,13 +205,20 @@ export function OtherSettings() {
   }, [channelTypeAssignments]);
 
   const distinctValues = useMemo(() => {
-    const result: Record<DisplayNameDimension, string[]> = { channel: [], category: [], brand: [] };
+    const result: Record<DisplayNameDimension, string[]> = {
+      channel: [],
+      category: [],
+      brand: [],
+      channelType: [],
+    };
     if (!records) return result;
     for (const { dimension, field } of SECTIONS) {
       result[dimension] = Array.from(new Set(records.map((r) => String(r[field])).filter(Boolean))).sort();
     }
     return result;
   }, [records]);
+
+  const channelTypeDisplayMap = useMemo(() => buildDisplayMap(overrides, 'channelType'), [overrides]);
 
   return (
     <div className="panel">
@@ -193,6 +228,13 @@ export function OtherSettings() {
         원본 분류 값은 바뀌지 않으며, 화면에 보여지는 이름만 바뀝니다. 채널명에는 유통사·도매·
         온라인·매장·기타 중 구분을 지정해 이름 앞에 표시할 수 있습니다.
       </p>
+      <RenameSection
+        dimension="channelType"
+        title="채널 구분 이름 (1~5번)"
+        rawValues={[...CHANNEL_TYPES]}
+        displayMap={channelTypeDisplayMap}
+        numberPrefix
+      />
       {SECTIONS.map(({ dimension, title }) => (
         <RenameSection
           key={dimension}
@@ -201,6 +243,7 @@ export function OtherSettings() {
           rawValues={distinctValues[dimension]}
           displayMap={buildDisplayMap(overrides, dimension)}
           channelTypeMap={dimension === 'channel' ? channelTypeMap : undefined}
+          channelTypeDisplayMap={dimension === 'channel' ? channelTypeDisplayMap : undefined}
         />
       ))}
       <ResetSection />
