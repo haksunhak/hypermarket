@@ -83,8 +83,11 @@ function RenameSection({
     });
   };
 
-  const reset = (raw: string) => {
-    setDrafts((d) => ({ ...d, [raw]: raw }));
+  const cancelEdit = (raw: string) => {
+    setDrafts((d) => {
+      const { [raw]: _, ...rest } = d;
+      return rest;
+    });
   };
 
   return (
@@ -93,7 +96,6 @@ function RenameSection({
       {rawValues.length === 0 && <p className="hint">업로드된 데이터에서 값을 찾을 수 없습니다.</p>}
       <ul className="rename-list">
         {rawValues.map((raw, idx) => {
-          const overridden = displayMap.has(raw);
           const dirty = isDirty(raw);
           const currentLabel = resolveDisplay(displayMap, raw);
           return (
@@ -114,12 +116,12 @@ function RenameSection({
                 onChange={(e) => setDrafts((d) => ({ ...d, [raw]: e.target.value }))}
               />
               {dirty && (
-                <button type="button" className="btn-save-needed" onClick={() => save(raw)}>
-                  저장 필요
-                </button>
-              )}
-              {overridden && (
-                <button type="button" onClick={() => reset(raw)}>원래대로</button>
+                <>
+                  <button type="button" className="btn-save-needed" onClick={() => save(raw)}>
+                    저장
+                  </button>
+                  <button type="button" onClick={() => cancelEdit(raw)}>취소</button>
+                </>
               )}
             </li>
           );
