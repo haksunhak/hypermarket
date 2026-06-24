@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import type { SaleRecord } from '../types';
 
 interface Row {
@@ -9,52 +9,41 @@ interface Row {
 }
 
 interface Props {
-  records: SaleRecord[]; // 날짜 범위를 제외한 다른 필터가 모두 적용된 레코드
-  defaultDate: string;
+  records: SaleRecord[];
+  dateFrom: string;
+  dateTo: string;
+  dateMode: 'single' | 'range';
 }
 
-export function ItemDailyDetail({ records, defaultDate }: Props) {
-  const [date, setDate] = useState(defaultDate);
-  const touched = useRef(false);
-
-  useEffect(() => {
-    if (touched.current) return;
-    setDate(defaultDate);
-  }, [defaultDate]);
+export function ItemDailyDetail({ records, dateFrom, dateTo, dateMode }: Props) {
+  const isRange = dateMode === 'range' && dateFrom !== dateTo;
 
   const rows = useMemo<Row[]>(() => {
     const map = new Map<string, Row>();
     for (const r of records) {
-      if (r.date !== date) continue;
+      if (isRange ? (r.date < dateFrom || r.date > dateTo) : r.date !== dateTo) continue;
       const row = map.get(r.itemCode) ?? { itemCode: r.itemCode, itemName: r.itemName, qty: 0, amount: 0 };
       row.qty += r.qty;
       row.amount += r.totalAmount;
       map.set(r.itemCode, row);
     }
     return Array.from(map.values()).sort((a, b) => b.amount - a.amount);
-  }, [records, date]);
+  }, [records, dateFrom, dateTo, isRange]);
 
   const totalQty = rows.reduce((s, r) => s + r.qty, 0);
   const totalAmount = rows.reduce((s, r) => s + r.amount, 0);
 
+  const periodLabel = isRange ? `${dateFrom} ~ ${dateTo}` : dateTo;
+  const title = isRange ? '선택 품목 기간별 상세' : '선택 품목 일자별 상세';
+
   return (
     <div className="chart-panel">
       <div className="item-trend-header">
-        <h3>선택 품목 일자별 상세</h3>
-        <label className="daily-detail-date">
-          날짜
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => {
-              touched.current = true;
-              setDate(e.target.value);
-            }}
-          />
-        </label>
+        <h3>{title}</h3>
+        <span className="daily-detail-period">{periodLabel}</span>
       </div>
       {rows.length === 0 ? (
-        <p className="hint">해당 날짜에 선택된 조건의 데이터가 없습니다.</p>
+        <p className="hint">해당 날짜/기간에 선택된 조건의 데이터가 없습니다.</p>
       ) : (
         <table className="data-table">
           <thead>

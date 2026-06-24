@@ -21,6 +21,7 @@ import { BreakdownChart } from './BreakdownChart';
 import { DonutChart } from './DonutChart';
 import { ItemTrendCharts } from './ItemTrendCharts';
 import { ItemDailyDetail } from './ItemDailyDetail';
+import { SalesVelocityPanel } from './SalesVelocityPanel';
 import { ComparisonCards } from './ComparisonCards';
 import { ChannelTypeReportSection } from './ChannelTypeReportSection';
 import { InsightsPanel } from './InsightsPanel';
@@ -185,7 +186,24 @@ export function Dashboard() {
       },
       {
         key: 'item-daily-detail',
-        node: <ItemDailyDetail records={filteredAllDates.filter(reportScope.matches)} defaultDate={filters.dateTo} />,
+        node: (
+          <ItemDailyDetail
+            records={filteredAllDates.filter(reportScope.matches)}
+            dateFrom={filters.dateFrom}
+            dateTo={filters.dateTo}
+            dateMode={filters.dateMode}
+          />
+        ),
+      },
+      {
+        key: 'sales-velocity',
+        node: (
+          <SalesVelocityPanel
+            records={filteredAllDates}
+            scope={reportScope}
+            dateTo={filters.dateTo}
+          />
+        ),
       }
     );
   }
