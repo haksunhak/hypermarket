@@ -1150,12 +1150,13 @@
   font-weight: 600;
 }
 
-/* 기타설정 — 저장 버튼 dirty 상태 */
-.btn-save-dirty {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-  font-weight: 600;
+/* 기타설정 — 저장 필요 버튼 */
+.btn-save-needed {
+  background: #fff7ed;
+  color: #c2410c;
+  border-color: #fb923c !important;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .ctr-download-btn {

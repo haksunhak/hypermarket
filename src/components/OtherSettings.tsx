@@ -95,6 +95,7 @@ function RenameSection({
         {rawValues.map((raw, idx) => {
           const overridden = displayMap.has(raw);
           const dirty = isDirty(raw);
+          const currentLabel = resolveDisplay(displayMap, raw);
           return (
             <li key={raw} className="rename-row">
               {channelTypeMap && (
@@ -104,8 +105,8 @@ function RenameSection({
                   channelTypeDisplayMap={channelTypeDisplayMap ?? new Map()}
                 />
               )}
-              <span className="rename-raw" title={raw}>
-                {numberPrefix ? `${idx + 1}. ` : ''}{raw}
+              <span className="rename-raw" title={`원본: ${raw}`}>
+                {numberPrefix ? `${idx + 1}. ` : ''}{currentLabel}
               </span>
               <span className="rename-arrow">→</span>
               <input
@@ -114,9 +115,9 @@ function RenameSection({
               />
               <button
                 type="button"
-                className={dirty ? 'btn-save-dirty' : undefined}
+                className={dirty ? 'btn-save-needed' : undefined}
                 onClick={() => save(raw)}
-              >저장</button>
+              >{dirty ? '저장 필요' : '저장'}</button>
               {overridden && (
                 <button type="button" onClick={() => reset(raw)}>원래대로</button>
               )}
