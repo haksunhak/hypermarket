@@ -1110,6 +1110,47 @@
   border-top: 1px solid #e5e7eb;
 }
 
+/* Export / Import */
+.export-import-panel { margin-top: 16px; }
+
+.export-import-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.export-import-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  background: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ei-icon  { font-size: 28px; }
+.ei-title { font-size: 15px; font-weight: 700; color: var(--text-h); }
+.ei-desc  { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+
+.ei-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: auto;
+}
+.ei-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ei-btn-export { background: #1e3a5f; color: #fff; }
+.ei-btn-import { background: #059669; color: #fff; }
+
+.ei-status { font-size: 13px; font-weight: 600; margin-top: 8px; }
+.ei-ok     { color: #059669; }
+.ei-error  { color: #dc2626; }
+
 /* Daily item detail */
 .daily-detail-date {
   display: flex;

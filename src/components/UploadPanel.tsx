@@ -4,6 +4,7 @@ import { parseEcountWorkbook } from '../lib/parseEcount';
 import type { SaleRecord } from '../types';
 import { UploadCalendar } from './UploadCalendar';
 import { CostUploadPanel } from './CostUploadPanel';
+import { DataExportImport } from './DataExportImport';
 
 interface ParsedFile {
   fileName: string;
@@ -180,6 +181,7 @@ export function UploadPanel() {
       {status && <pre className="upload-status">{status.trim()}</pre>}
       <UploadCalendar />
       <CostUploadPanel />
+      <DataExportImport />
     </div>
   );
 }
