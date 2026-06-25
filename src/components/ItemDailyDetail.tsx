@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { SaleRecord } from '../types';
+import { exportDailyDetailToExcel } from '../lib/exportExcel';
 
 interface Row {
   itemCode: string;
@@ -36,11 +37,20 @@ export function ItemDailyDetail({ records, dateFrom, dateTo, dateMode }: Props) 
   const periodLabel = isRange ? `${dateFrom} ~ ${dateTo}` : dateTo;
   const title = isRange ? '선택 품목 기간별 상세' : '선택 품목 일자별 상세';
 
+  const handleDownload = useCallback(() => {
+    exportDailyDetailToExcel(rows, title, periodLabel);
+  }, [rows, title, periodLabel]);
+
   return (
     <div className="chart-panel">
       <div className="item-trend-header">
         <h3>{title}</h3>
         <span className="daily-detail-period">{periodLabel}</span>
+        {rows.length > 0 && (
+          <button type="button" className="ctr-download-btn velocity-dl-btn" onClick={handleDownload}>
+            ⬇ 엑셀 다운로드
+          </button>
+        )}
       </div>
       {rows.length === 0 ? (
         <p className="hint">해당 날짜/기간에 선택된 조건의 데이터가 없습니다.</p>

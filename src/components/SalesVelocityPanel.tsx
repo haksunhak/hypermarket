@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import type { SaleRecord } from '../types';
 import type { ReportScope } from '../lib/filters';
+import { exportVelocityToExcel } from '../lib/exportExcel';
 
 interface VelocityRow {
   itemCode: string;
@@ -79,6 +80,11 @@ export function SalesVelocityPanel({ records, scope, dateTo }: Props) {
       .sort((a, b) => b.monthlyAvgQty - a.monthlyAvgQty);
   }, [records, scope, dateTo]);
 
+  const handleDownload = useCallback(() => {
+    const title = `SKU별 판매도 (~${dateTo})`;
+    exportVelocityToExcel(rows, title);
+  }, [rows, dateTo]);
+
   if (rows.length === 0) return null;
 
   return (
@@ -86,6 +92,9 @@ export function SalesVelocityPanel({ records, scope, dateTo }: Props) {
       <div className="item-trend-header">
         <h3>SKU별 판매도</h3>
         <span className="velocity-sub">첫 판매일 ~ {dateTo} 기준 평균</span>
+        <button type="button" className="ctr-download-btn velocity-dl-btn" onClick={handleDownload}>
+          ⬇ 엑셀 다운로드
+        </button>
       </div>
       <div className="velocity-table-wrap">
         <table className="data-table">

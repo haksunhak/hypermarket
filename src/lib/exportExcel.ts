@@ -159,3 +159,129 @@ export function exportChannelTypeReportToExcel(report: ChannelTypeReport, title:
   XLSX.utils.book_append_sheet(wb, ws, '판매현황');
   XLSX.writeFile(wb, `${title}.xlsx`);
 }
+
+// ── SKU별 판매도 내보내기 ──────────────────────────────────────────────────────
+
+interface VelocityRowExport {
+  itemCode: string;
+  itemName: string;
+  firstSaleDate: string;
+  days: number;
+  totalQty: number;
+  weeklyAvgQty: number;
+  monthlyAvgQty: number;
+  monthlyAvgAmount: number;
+}
+
+function fmtQtyExcel(n: number): string {
+  if (n < 1) return n.toFixed(2);
+  if (n < 10) return n.toFixed(1);
+  return Math.round(n).toString();
+}
+
+export function exportVelocityToExcel(rows: VelocityRowExport[], title: string) {
+  const headers = ['품목코드', '품목명', '첫 판매일', '판매 기간(일)', '총 수량', '주간 평균 수량', '월간 평균 수량', '월간 평균 금액'];
+  const numCols = headers.length;
+
+  const data: (string | number | null)[][] = [];
+  const merges: XLSX.Range[] = [];
+
+  // 행 0: 타이틀
+  const r0: (string | number | null)[] = new Array(numCols).fill(null);
+  r0[0] = title;
+  data.push(r0);
+  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } });
+
+  // 행 1: 헤더
+  data.push(headers);
+
+  // 행 2~: 데이터
+  for (const row of rows) {
+    data.push([
+      row.itemCode,
+      row.itemName,
+      row.firstSaleDate,
+      row.days,
+      row.totalQty,
+      Number(fmtQtyExcel(row.weeklyAvgQty)),
+      Number(fmtQtyExcel(row.monthlyAvgQty)),
+      Math.round(row.monthlyAvgAmount),
+    ]);
+  }
+
+  // 합계 행
+  const totQty = rows.reduce((s, r) => s + r.totalQty, 0);
+  const totWeekly = rows.reduce((s, r) => s + r.weeklyAvgQty, 0);
+  const totMonthly = rows.reduce((s, r) => s + r.monthlyAvgQty, 0);
+  const totMonthlyAmt = rows.reduce((s, r) => s + r.monthlyAvgAmount, 0);
+  const ri = data.length;
+  const footRow: (string | number | null)[] = new Array(numCols).fill(null);
+  footRow[0] = '합계';
+  merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 4 } });
+  footRow[4] = totQty;
+  footRow[5] = Number(fmtQtyExcel(totWeekly));
+  footRow[6] = Number(fmtQtyExcel(totMonthly));
+  footRow[7] = Math.round(totMonthlyAmt);
+  data.push(footRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    { wch: 14 }, { wch: 30 }, { wch: 12 }, { wch: 12 },
+    { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 16 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'SKU별 판매도');
+  XLSX.writeFile(wb, `${title}.xlsx`);
+}
+
+// ── 선택 품목 일자별/기간별 상세 내보내기 ─────────────────────────────────────
+
+interface DailyDetailRowExport {
+  itemCode: string;
+  itemName: string;
+  qty: number;
+  amount: number;
+}
+
+export function exportDailyDetailToExcel(rows: DailyDetailRowExport[], title: string, period: string) {
+  const headers = ['품목코드', '품목명', '수량', '판매금액'];
+  const numCols = headers.length;
+
+  const data: (string | number | null)[][] = [];
+  const merges: XLSX.Range[] = [];
+
+  // 행 0: 타이틀
+  const r0: (string | number | null)[] = new Array(numCols).fill(null);
+  r0[0] = `${title} (${period})`;
+  data.push(r0);
+  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } });
+
+  // 행 1: 헤더
+  data.push(headers);
+
+  // 행 2~: 데이터
+  for (const row of rows) {
+    data.push([row.itemCode, row.itemName, row.qty, row.amount]);
+  }
+
+  // 합계 행
+  const totQty = rows.reduce((s, r) => s + r.qty, 0);
+  const totAmt = rows.reduce((s, r) => s + r.amount, 0);
+  const ri = data.length;
+  const footRow: (string | number | null)[] = new Array(numCols).fill(null);
+  footRow[0] = '합계';
+  merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 1 } });
+  footRow[2] = totQty;
+  footRow[3] = totAmt;
+  data.push(footRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!merges'] = merges;
+  ws['!cols'] = [{ wch: 14 }, { wch: 30 }, { wch: 10 }, { wch: 14 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '품목상세');
+  XLSX.writeFile(wb, `${title} ${period}.xlsx`);
+}
