@@ -81,12 +81,20 @@ export function ChannelTypeReportSection({
   channelTypeDisplayMap,
 }: Props) {
   const [selectedGroup2, setSelectedGroup2] = useState<string | null>(null);
+
+  // 날짜 범위 + 스코프 — 일별 판매현황용
   const scopedRecords = useMemo(
     () =>
       records.filter(
         (r) => scope.matches(r) && (!dateFrom || r.date >= dateFrom) && (!dateTo || r.date <= dateTo)
       ),
     [records, scope, dateFrom, dateTo]
+  );
+
+  // 날짜 제한 없이 스코프만 적용 — 전체 누계용
+  const allScopedRecords = useMemo(
+    () => records.filter((r) => scope.matches(r) && r.date),
+    [records, scope]
   );
 
   // 종료일에 정확히 데이터가 없을 수 있으므로(예: 넓은 기간 조회 중 마지막 날짜에는
@@ -112,14 +120,26 @@ export function ChannelTypeReportSection({
     [dailyRecords, channelTypeMap, costMap, channelTypeDisplayMap]
   );
   const cumulativeReport = useMemo(
-    () => buildChannelTypeReport(scopedRecords, channelTypeMap, costMap, channelTypeDisplayMap),
-    [scopedRecords, channelTypeMap, costMap, channelTypeDisplayMap]
+    () => buildChannelTypeReport(allScopedRecords, channelTypeMap, costMap, channelTypeDisplayMap),
+    [allScopedRecords, channelTypeMap, costMap, channelTypeDisplayMap]
   );
+
+  // 전체 누계 날짜 범위 계산 (타이틀용)
+  const cumulativeDateRange = useMemo(() => {
+    if (allScopedRecords.length === 0) return '';
+    let min = allScopedRecords[0].date;
+    let max = allScopedRecords[0].date;
+    for (const r of allScopedRecords) {
+      if (r.date < min) min = r.date;
+      if (r.date > max) max = r.date;
+    }
+    return `${min}~${max}`;
+  }, [allScopedRecords]);
 
   const dailyTitle = snapshotDate
     ? `${formatDateWithWeekday(snapshotDate)} ${scope.label} 판매현황`
     : `${scope.label} 판매현황`;
-  const cumulativeTitle = `판매 누계 (${dateFrom}~${dateTo}) ${scope.label}`;
+  const cumulativeTitle = `판매 누계 (${cumulativeDateRange}) ${scope.label}`;
 
   const handleDownloadDaily = useCallback(() => {
     exportChannelTypeReportToExcel(dailyReport, dailyTitle);
@@ -136,10 +156,10 @@ export function ChannelTypeReportSection({
   const channelDetails = useMemo(() => {
     if (!selectedGroup2) return [];
     return buildChannelDetail(
-      scopedRecords, selectedGroup2,
+      allScopedRecords, selectedGroup2,
       channelTypeMap, channelDisplayMap, channelTypeDisplayMap, costMap
     );
-  }, [selectedGroup2, scopedRecords, channelTypeMap, channelDisplayMap, channelTypeDisplayMap, costMap]);
+  }, [selectedGroup2, allScopedRecords, channelTypeMap, channelDisplayMap, channelTypeDisplayMap, costMap]);
 
   if (scopedRecords.length === 0) {
     return (
@@ -173,7 +193,7 @@ export function ChannelTypeReportSection({
       {selectedGroup2 && channelDetails.length > 0 && (
         <div className="channel-drill-panel">
           <div className="channel-drill-header">
-            <span>채널별 판매 상세 — {selectedGroup2} ({dateFrom}~{dateTo})</span>
+            <span>채널별 판매 상세 — {selectedGroup2} ({cumulativeDateRange})</span>
             <button type="button" className="channel-drill-close" onClick={() => setSelectedGroup2(null)}>✕</button>
           </div>
           <div className="channel-type-table-scroll" style={{ height: 'auto', maxHeight: '320px', resize: 'none' }}>
