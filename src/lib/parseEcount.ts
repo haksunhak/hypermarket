@@ -43,7 +43,13 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
   const results: SaleRecord[] = [];
   const uploadedAt = Date.now();
 
-  for (const sheetName of wb.SheetNames) {
+  // xlsm 매크로 파일은 판매현황 시트만 처리 (DB/law/재고/집계 시트 제외)
+  const isXlsm = fileName.toLowerCase().endsWith('.xlsm');
+  const sheetNamesToProcess = isXlsm
+    ? wb.SheetNames.filter((n) => n.includes('판매현황'))
+    : wb.SheetNames;
+
+  for (const sheetName of sheetNamesToProcess) {
     const sheet = wb.Sheets[sheetName];
     const rows: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
     if (rows.length < 2) continue;
