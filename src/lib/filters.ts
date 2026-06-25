@@ -78,15 +78,26 @@ export interface ReportScope {
 export function resolveReportScope(
   filters: DashboardFilters,
   productGroups: ProductGroup[],
-  brandDisplayMap: Map<string, string>
+  brandDisplayMap: Map<string, string>,
+  channelGroups?: ChannelGroup[]
 ): ReportScope | null {
   const productGroupSelections = filters.groupSelections.filter((s) => s.startsWith('product::'));
+  const channelGroupSelections = filters.groupSelections.filter((s) => s.startsWith('channel::'));
+
   if (productGroupSelections.length === 1) {
     const id = productGroupSelections[0].split('::')[1];
     const group = productGroups.find((g) => g.id === id);
     if (group) {
       const codes = new Set(group.itemCodes);
       return { label: group.name, matches: (r) => codes.has(r.itemCode) };
+    }
+  }
+  if (channelGroupSelections.length === 1 && channelGroups) {
+    const id = channelGroupSelections[0].split('::')[1];
+    const group = channelGroups.find((g) => g.id === id);
+    if (group) {
+      const names = new Set(group.channelNames);
+      return { label: group.name, matches: (r) => names.has(r.channelName) };
     }
   }
   if (filters.productSelections.length === 1) {

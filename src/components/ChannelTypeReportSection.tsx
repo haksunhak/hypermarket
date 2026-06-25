@@ -161,7 +161,7 @@ export function ChannelTypeReportSection({
     );
   }, [selectedGroup2, allScopedRecords, channelTypeMap, channelDisplayMap, channelTypeDisplayMap, costMap]);
 
-  if (scopedRecords.length === 0) {
+  if (allScopedRecords.length === 0) {
     return (
       <div className="panel">
         <h3>채널유형별 판매현황</h3>
@@ -172,7 +172,7 @@ export function ChannelTypeReportSection({
 
   return (
     <div className="panel channel-type-report-panel">
-      {snapshotDate && (
+      {scopedRecords.length > 0 && snapshotDate && (
         <ChannelTypeReportTable
           title={dailyTitle}
           report={dailyReport}

@@ -155,7 +155,7 @@ export function Dashboard() {
     );
   }
 
-  const reportScope = resolveReportScope(filters, productGroups, brandDisplayMap);
+  const reportScope = resolveReportScope(filters, productGroups, brandDisplayMap, channelGroups);
 
   const widgets: WidgetDef[] = [
     { key: 'kpi', node: <KpiCards records={filtered} /> },
