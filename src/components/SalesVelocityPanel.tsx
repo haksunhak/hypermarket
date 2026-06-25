@@ -115,8 +115,8 @@ export function SalesVelocityPanel({ records, scope, dateFrom, dateTo }: Props) 
           weeklyAvgQty:    d.qty    / weeks,
           monthlyAvgQty:   d.qty    / months,
           monthlyAvgAmount: d.amount / months,
-          recentWeekQty:  d.recentWeek,
-          recentMonthQty: d.recentMonth,
+          recentWeekQty:  d.recentWeek  / 7,   // 최근 7일 일평균
+          recentMonthQty: d.recentMonth / 30,  // 최근 30일 일평균
         };
       })
       .sort((a, b) => b.monthlyAvgQty - a.monthlyAvgQty);
@@ -225,8 +225,8 @@ export function SalesVelocityPanel({ records, scope, dateFrom, dateTo }: Props) 
                 <th>주간 평균</th>
                 <th>월간 평균</th>
                 <th>월간 평균 금액</th>
-                <th className="velocity-recent-hd">최근 7일</th>
-                <th className="velocity-recent-hd">최근 30일</th>
+                <th className="velocity-recent-hd">최근 7일 평균</th>
+                <th className="velocity-recent-hd">최근 30일 평균</th>
               </tr>
             </thead>
             <tbody>
@@ -240,8 +240,8 @@ export function SalesVelocityPanel({ records, scope, dateFrom, dateTo }: Props) 
                   <td className="num velocity-avg">{fmtQty(r.weeklyAvgQty)}</td>
                   <td className="num velocity-avg">{fmtQty(r.monthlyAvgQty)}</td>
                   <td className="num velocity-avg">{fmtAmt(r.monthlyAvgAmount)}</td>
-                  <td className="num velocity-recent">{r.recentWeekQty.toLocaleString('ko-KR')}</td>
-                  <td className="num velocity-recent">{r.recentMonthQty.toLocaleString('ko-KR')}</td>
+                  <td className="num velocity-recent">{fmtQty(r.recentWeekQty)}</td>
+                  <td className="num velocity-recent">{fmtQty(r.recentMonthQty)}</td>
                 </tr>
               ))}
             </tbody>
@@ -252,8 +252,8 @@ export function SalesVelocityPanel({ records, scope, dateFrom, dateTo }: Props) 
                 <td className="num">{fmtQty(avgRows.reduce((s, r) => s + r.weeklyAvgQty,    0))}</td>
                 <td className="num">{fmtQty(avgRows.reduce((s, r) => s + r.monthlyAvgQty,   0))}</td>
                 <td className="num">{fmtAmt(avgRows.reduce((s, r) => s + r.monthlyAvgAmount, 0))}</td>
-                <td className="num">{avgRows.reduce((s, r) => s + r.recentWeekQty,  0).toLocaleString('ko-KR')}</td>
-                <td className="num">{avgRows.reduce((s, r) => s + r.recentMonthQty, 0).toLocaleString('ko-KR')}</td>
+                <td className="num">{fmtQty(avgRows.reduce((s, r) => s + r.recentWeekQty,  0))}</td>
+                <td className="num">{fmtQty(avgRows.reduce((s, r) => s + r.recentMonthQty, 0))}</td>
               </tr>
             </tfoot>
           </table>
