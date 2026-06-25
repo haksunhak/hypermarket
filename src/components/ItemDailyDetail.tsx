@@ -47,7 +47,7 @@ export function ItemDailyDetail({ records, dateFrom, dateTo, dateMode }: Props) 
         <h3>{title}</h3>
         <span className="daily-detail-period">{periodLabel}</span>
         {rows.length > 0 && (
-          <button type="button" className="ctr-download-btn velocity-dl-btn" onClick={handleDownload}>
+          <button type="button" className="velocity-dl-btn" onClick={handleDownload}>
             ⬇ 엑셀 다운로드
           </button>
         )}

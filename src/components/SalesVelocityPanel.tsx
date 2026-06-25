@@ -92,7 +92,7 @@ export function SalesVelocityPanel({ records, scope, dateTo }: Props) {
       <div className="item-trend-header">
         <h3>SKU별 판매도</h3>
         <span className="velocity-sub">첫 판매일 ~ {dateTo} 기준 평균</span>
-        <button type="button" className="ctr-download-btn velocity-dl-btn" onClick={handleDownload}>
+        <button type="button" className="velocity-dl-btn" onClick={handleDownload}>
           ⬇ 엑셀 다운로드
         </button>
       </div>
