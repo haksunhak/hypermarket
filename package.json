@@ -12,6 +12,7 @@
   "dependencies": {
     "dayjs": "^1.11.21",
     "dexie": "^4.4.4",
+    "dexie-cloud-addon": "^4.4.13",
     "dexie-react-hooks": "^4.4.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

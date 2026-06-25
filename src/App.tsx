@@ -4,6 +4,7 @@ import { UploadPanel } from './components/UploadPanel';
 import { DataTable } from './components/DataTable';
 import { GroupManager } from './components/GroupManager';
 import { OtherSettings } from './components/OtherSettings';
+import { CloudSync } from './components/CloudSync';
 import './App.css';
 
 type Tab = 'dashboard' | 'upload' | 'data' | 'groups' | 'other';
@@ -34,6 +35,7 @@ function App() {
             </button>
           ))}
         </nav>
+        <CloudSync />
       </header>
       <main className="app-main">
         {tab === 'dashboard' && <Dashboard />}
