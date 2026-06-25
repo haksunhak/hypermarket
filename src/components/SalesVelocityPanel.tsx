@@ -16,19 +16,23 @@ interface VelocityRow {
 }
 
 function daysBetween(from: string, to: string): number {
+  if (!from || !to) return 7;
   const d1 = new Date(`${from}T00:00:00`);
   const d2 = new Date(`${to}T00:00:00`);
+  if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return 7;
   // 최소 7일(1주) 보장 — 판매 첫날과 조회일이 같을 때 0나누기 방지
   return Math.max(7, Math.round((d2.getTime() - d1.getTime()) / 86_400_000) + 1);
 }
 
 function fmtQty(n: number): string {
+  if (!Number.isFinite(n)) return '-';
   if (n < 1) return n.toFixed(2);
   if (n < 10) return n.toFixed(1);
   return Math.round(n).toLocaleString('ko-KR');
 }
 
 function fmtAmt(n: number): string {
+  if (!Number.isFinite(n)) return '-';
   if (n >= 10_000) return `${Math.round(n / 10_000).toLocaleString('ko-KR')}만원`;
   return `${Math.round(n).toLocaleString('ko-KR')}원`;
 }
@@ -44,7 +48,7 @@ export function SalesVelocityPanel({ records, scope, dateTo }: Props) {
   const rows = useMemo<VelocityRow[]>(() => {
     // 스코프(선택 품목/그룹) 내 판매 레코드 중 dateTo 이전 데이터 전체 사용
     const base = records.filter(
-      r => r.type === 'sale' && scope.matches(r) && r.date <= dateTo
+      r => r.type === 'sale' && scope.matches(r) && r.date && r.date <= dateTo
     );
     if (base.length === 0) return [];
 

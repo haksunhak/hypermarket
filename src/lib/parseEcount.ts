@@ -39,7 +39,7 @@ function toNumber(raw: unknown): number {
 }
 
 export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRecord[] {
-  const wb = XLSX.read(file, { type: 'array' });
+  const wb = XLSX.read(file, { type: 'array', cellDates: true }); // cellDates: true → datetime 셀을 Date 객체로 반환
   const results: SaleRecord[] = [];
   const uploadedAt = Date.now();
 
