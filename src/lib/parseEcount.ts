@@ -18,6 +18,13 @@ function findCol(headers: string[], ...candidates: string[]): number {
 }
 
 function parseEcountDate(raw: unknown): string {
+  // Excel이 datetime 객체로 반환하는 경우 (Type B xlsm 파일)
+  if (raw instanceof Date) {
+    const y = raw.getFullYear();
+    const mo = String(raw.getMonth() + 1).padStart(2, '0');
+    const d = String(raw.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
   const s = String(raw).trim();
   const m = s.match(/(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})/);
   if (!m) return '';
@@ -54,7 +61,7 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
       warehouseName: findCol(headers, '창고명'),
       channelCode: findCol(headers, '관리항목코드'),
       channelName: findCol(headers, '관리항목명'),
-      date: findCol(headers, '일별', '일자'),
+      date: findCol(headers, '일별', '날짜', '일자'), // '날짜'를 '일자' 앞에 — '일자-No.' 오인식 방지
       group1: findCol(headers, '품목그룹1명'),
       group2: findCol(headers, '품목그룹2명'),
       group3: findCol(headers, '품목그룹3명'),
@@ -64,6 +71,7 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
       supplyAmount: findCol(headers, '공급가액'),
       vat: findCol(headers, '부가세'),
       totalAmount: findCol(headers, '합계'),
+      gubn: findCol(headers, '구분'), // 판매/사은품 구분 컬럼 (xlsm 파일)
     };
 
     const isSale = col.supplyAmount !== -1 && col.totalAmount !== -1;
@@ -73,6 +81,15 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
       const itemCode = col.itemCode !== -1 ? String(row[col.itemCode] ?? '').trim() : '';
       if (!itemCode) continue;
 
+      // '구분' 컬럼이 있으면 행별로 판매/사은품 판단, 없으면 기존 시트 단위 판단
+      let rowType: SaleRecord['type'];
+      if (col.gubn !== -1) {
+        const gubnVal = String(row[col.gubn] ?? '').trim();
+        rowType = gubnVal === '사은품' ? 'gift' : 'sale';
+      } else {
+        rowType = isSale ? 'sale' : 'gift';
+      }
+
       const qty = toNumber(row[col.qty]);
       const supplyAmount = isSale ? toNumber(row[col.supplyAmount]) : 0;
       const vat = isSale ? toNumber(row[col.vat]) : 0;
@@ -81,10 +98,10 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
       results.push({
         id: uuid(),
         date: parseEcountDate(row[col.date]),
-        warehouseCode: String(row[col.warehouseCode] ?? '').trim(),
-        warehouseName: String(row[col.warehouseName] ?? '').trim(),
-        channelCode: String(row[col.channelCode] ?? '').trim(),
-        channelName: String(row[col.channelName] ?? '').trim(),
+        warehouseCode: col.warehouseCode !== -1 ? String(row[col.warehouseCode] ?? '').trim() : '',
+        warehouseName: col.warehouseName !== -1 ? String(row[col.warehouseName] ?? '').trim() : '',
+        channelCode: col.channelCode !== -1 ? String(row[col.channelCode] ?? '').trim() : '',
+        channelName: col.channelName !== -1 ? String(row[col.channelName] ?? '').trim() : '',
         itemCode,
         itemName: col.itemName !== -1 ? String(row[col.itemName] ?? '').trim() : '',
         group1: col.group1 !== -1 ? String(row[col.group1] ?? '').trim() : '',
@@ -94,7 +111,7 @@ export function parseEcountWorkbook(file: ArrayBuffer, fileName: string): SaleRe
         supplyAmount,
         vat,
         totalAmount,
-        type: isSale ? 'sale' : 'gift',
+        type: rowType,
         source: `${fileName} / ${sheetName}`,
         uploadedAt,
       });

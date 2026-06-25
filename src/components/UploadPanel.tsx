@@ -144,7 +144,7 @@ export function UploadPanel() {
       <input
         ref={inputRef}
         type="file"
-        accept=".xlsx,.xls"
+        accept=".xlsx,.xls,.xlsm"
         multiple
         disabled={busy}
         onChange={(e) => handleFiles(e.target.files)}
