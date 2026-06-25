@@ -1,5 +1,4 @@
 import Dexie, { type Table } from 'dexie';
-import dexieCloud from 'dexie-cloud-addon';
 import type {
   SaleRecord,
   ProductGroup,
@@ -18,8 +17,7 @@ class AppDB extends Dexie {
   itemCosts!: Table<ItemCost, string>;
 
   constructor() {
-    super('hypermarket-dashboard', { addons: [dexieCloud] });
-
+    super('hypermarket-dashboard');
     this.version(1).stores({
       records: 'id, date, warehouseName, channelName, itemCode, group1, group2, group3, type, source',
       productGroups: 'id, name',
@@ -46,24 +44,6 @@ class AppDB extends Dexie {
       channelTypes: 'id, channelName, channelType',
       itemCosts: 'id, itemCode',
     });
-    // v5: Dexie Cloud 동기화 지원 (스키마 동일, 클라우드 애드온 활성화)
-    this.version(5).stores({
-      records: 'id, date, warehouseName, channelName, itemCode, group1, group2, group3, type, source',
-      productGroups: 'id, name',
-      channelGroups: 'id, name',
-      displayNames: 'id, dimension, rawValue',
-      channelTypes: 'id, channelName, channelType',
-      itemCosts: 'id, itemCode',
-    });
-
-    const cloudUrl = import.meta.env.VITE_DEXIE_CLOUD_URL as string | undefined;
-    if (cloudUrl) {
-      this.cloud.configure({
-        databaseUrl: cloudUrl,
-        requireAuth: false,
-        tryUseServiceWorker: false,
-      });
-    }
   }
 }
 
