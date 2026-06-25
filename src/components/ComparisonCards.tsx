@@ -1,17 +1,6 @@
 import { buildComparisons } from '../lib/comparisons';
 import type { SaleRecord } from '../types';
 
-function ChangeBadge({ pct }: { pct: number | null }) {
-  if (pct === null) return <span className="change-badge neutral">비교 데이터 없음</span>;
-  if (pct === 0) return <span className="change-badge neutral">변동 없음</span>;
-  const up = pct > 0;
-  return (
-    <span className={`change-badge ${up ? 'up' : 'down'}`}>
-      {up ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
-    </span>
-  );
-}
-
 interface Props {
   records: SaleRecord[];
   baseDate: string;
@@ -37,19 +26,39 @@ export function ComparisonCards({ records, baseDate }: Props) {
         주말 매출이 누락되지 않도록).
       </p>
       <div className="comparison-grid">
-        {comparisons.map((c) => (
-          <div
-            className={`comparison-card${c.changePct !== null ? (c.changePct > 0 ? ' is-up' : c.changePct < 0 ? ' is-down' : '') : ''}`}
-            key={c.label}
-          >
-            <div className="comparison-label">{c.label}</div>
-            <div className="comparison-value">{c.currentAmount.toLocaleString('ko-KR')}원</div>
-            <div className="comparison-sub">
-              {c.currentLabel} vs {c.compareLabel}: {c.compareAmount.toLocaleString('ko-KR')}원
+        {comparisons.map((c) => {
+          const hasData = c.changePct !== null;
+          const isUp = hasData && c.changePct! > 0;
+          const isDown = hasData && c.changePct! < 0;
+          const diff = c.currentAmount - c.compareAmount;
+          const diffStr = diff === 0
+            ? '변동 없음'
+            : `${diff > 0 ? '+' : ''}${diff.toLocaleString('ko-KR')}원`;
+          const dirClass = isUp ? ' is-up' : isDown ? ' is-down' : '';
+
+          return (
+            <div className={`comparison-card${dirClass}`} key={c.label}>
+              <div className="comparison-label">{c.label}</div>
+              <div className="comparison-period">
+                {c.currentLabel} vs {c.compareLabel}
+              </div>
+              {hasData ? (
+                <>
+                  <div className={`comparison-pct${dirClass}`}>
+                    {isUp ? '▲' : isDown ? '▼' : '−'}&nbsp;
+                    {Math.abs(c.changePct!).toFixed(1)}%
+                  </div>
+                  <div className={`comparison-diff${dirClass}`}>{diffStr}</div>
+                  <div className="comparison-base">
+                    비교 기준: {c.compareAmount.toLocaleString('ko-KR')}원
+                  </div>
+                </>
+              ) : (
+                <div className="comparison-pct neutral">비교 데이터 없음</div>
+              )}
             </div>
-            <ChangeBadge pct={c.changePct} />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
