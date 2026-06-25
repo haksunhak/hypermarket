@@ -1300,6 +1300,46 @@
   color: #1d4ed8;
 }
 
+.velocity-recent {
+  font-weight: 600;
+  color: #059669;
+}
+
+.velocity-recent-hd {
+  background: #ecfdf5 !important;
+  color: #065f46;
+}
+
+/* 판매도 뷰 탭 */
+.velocity-tabs {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.velocity-tab {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.velocity-tab:hover {
+  background: #e2e8f0;
+}
+
+.velocity-tab--active {
+  background: #1e3a5f;
+  color: #fff;
+  border-color: #1e3a5f;
+  font-weight: 700;
+}
+
 /* 판매도·일자별상세 패널 내 다운로드 버튼 (흰 배경 패널용) */
 .velocity-dl-btn {
   background: #1e3a5f;

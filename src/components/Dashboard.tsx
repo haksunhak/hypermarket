@@ -201,6 +201,7 @@ export function Dashboard() {
           <SalesVelocityPanel
             records={filteredAllDates}
             scope={reportScope}
+            dateFrom={filters.dateFrom}
             dateTo={filters.dateTo}
           />
         ),

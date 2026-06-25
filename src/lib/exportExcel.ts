@@ -285,3 +285,83 @@ export function exportDailyDetailToExcel(rows: DailyDetailRowExport[], title: st
   XLSX.utils.book_append_sheet(wb, ws, '품목상세');
   XLSX.writeFile(wb, `${title} ${period}.xlsx`);
 }
+
+// ── SKU별 월별/연간 피벗 내보내기 ───────────────────────────────────────────────
+
+interface PivotRowExport {
+  itemCode: string;
+  itemName: string;
+  data: Record<string, number>;
+  total: number;
+}
+
+function exportPivotToExcel(
+  rows: PivotRowExport[],
+  keys: string[],           // 월(YYYY-MM) 또는 연(YYYY)
+  title: string,
+  sheetName: string,
+  keyLabel: (k: string) => string
+) {
+  const numCols = 2 + keys.length + 1; // 품목코드 + 품목명 + keys + 합계
+  const data: (string | number | null)[][] = [];
+  const merges: XLSX.Range[] = [];
+
+  // 행 0: 타이틀
+  const r0: (string | number | null)[] = new Array(numCols).fill(null);
+  r0[0] = title;
+  data.push(r0);
+  merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: numCols - 1 } });
+
+  // 행 1: 헤더
+  data.push(['품목코드', '품목명', ...keys.map(keyLabel), '합계']);
+
+  // 행 2~: 데이터
+  for (const row of rows) {
+    data.push([
+      row.itemCode,
+      row.itemName,
+      ...keys.map(k => row.data[k] ?? 0),
+      row.total,
+    ]);
+  }
+
+  // 합계 행
+  const ri = data.length;
+  const foot: (string | number | null)[] = new Array(numCols).fill(null);
+  foot[0] = '합계';
+  merges.push({ s: { r: ri, c: 0 }, e: { r: ri, c: 1 } });
+  keys.forEach((k, i) => {
+    foot[2 + i] = rows.reduce((s, r) => s + (r.data[k] ?? 0), 0);
+  });
+  foot[numCols - 1] = rows.reduce((s, r) => s + r.total, 0);
+  data.push(foot);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!merges'] = merges;
+  ws['!cols'] = [
+    { wch: 14 },
+    { wch: 30 },
+    ...keys.map(() => ({ wch: 10 })),
+    { wch: 10 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  XLSX.writeFile(wb, `${title}.xlsx`);
+}
+
+export function exportMonthlyVelocityToExcel(
+  rows: PivotRowExport[],
+  months: string[],
+  title: string
+) {
+  exportPivotToExcel(rows, months, title, '월별판매', k => k);
+}
+
+export function exportYearlyVelocityToExcel(
+  rows: PivotRowExport[],
+  years: string[],
+  title: string
+) {
+  exportPivotToExcel(rows, years, title, '연간판매', k => `${k}년`);
+}
